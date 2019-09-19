@@ -1,18 +1,12 @@
-﻿using System;
-using System.Web;
-using System.Web.Mail;
-using System.Runtime.InteropServices;
-using System.DirectoryServices;
-using System.Data;
+﻿using LNMCM.DAL;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.WebControls;
-using LNMCM.DAL;
-using LNMCM.BLL;
+using System;
+using System.Data;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.DirectoryServices.ActiveDirectory;
 using System.Web.Configuration;
 using System.Web.UI;
-using System.Text.RegularExpressions;
 namespace LNMCM.Layouts.LNMCM
 {
     public partial class Enroll : LayoutsPageBase
@@ -70,7 +64,7 @@ namespace LNMCM.Layouts.LNMCM
 
         void txtPwd1_TextChanged(object sender, EventArgs e)
         {
-            if (txtPwd.Text.Length !=txtPwd1.Text.Length )
+            if (txtPwd.Text.Length != txtPwd1.Text.Length)
                 lblPwd1Msg.Text = "密码与确认密码不一致！";
             else
                 lblPwd1Msg.Text = "";
@@ -79,8 +73,8 @@ namespace LNMCM.Layouts.LNMCM
 
         void txtPwd_TextChanged(object sender, EventArgs e)
         {
-            if (txtPwd.Text.Length < 6)
-                lblPwdMsg.Text = "密码长度不能小于6！";
+            if (txtPwd.Text.Length < 8)
+                lblPwdMsg.Text = "密码长度不能小于8位！";
             else
                 lblPwdMsg.Text = "";
 
@@ -115,11 +109,11 @@ namespace LNMCM.Layouts.LNMCM
         private void UserAddToGroup(string account)
         {
             //string account = txtAccount.Text.Trim().Replace(" ", "");
-            SPSecurity.RunWithElevatedPrivileges(delegate()
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 string domain = ADHelper.Domain;
                 string strConst = HiddenField1.Value;
-            if (impersonateValidUser("administrator", domain, strConst))//.Substring(strConst.IndexOf(" ") + 1)))
+                if (impersonateValidUser("administrator", domain, strConst))//.Substring(strConst.IndexOf(" ") + 1)))
                 {
                     ADHelper.AddUserToSafeGroup(account, account.Length == 5 ? "SmartNEUTeacher" : "SmartNEUStudent");
                     undoImpersonation();
@@ -132,12 +126,12 @@ namespace LNMCM.Layouts.LNMCM
             });
         }
         //判断指定的帐户是否存在
-        private bool UserExits(string account,ref int stateid)
+        private bool UserExits(string account, ref int stateid)
         {
             int stateint = 0;
             //string account = txtAccount.Text.Trim().Replace(" ", "");
             bool retValue = false;
-            SPSecurity.RunWithElevatedPrivileges(delegate()
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
                {
                    string domain = ADHelper.Domain;
                    string strConst = HiddenField1.Value;
@@ -180,7 +174,7 @@ namespace LNMCM.Layouts.LNMCM
                 lblNumMsg.Text = "";
         }
         #region 恢复数据
-        private void  ImportMembersDel ()
+        private void ImportMembersDel()
         {
             DataSet ds = DAL.User.GetEnrollDel();
 
@@ -202,7 +196,7 @@ namespace LNMCM.Layouts.LNMCM
                     dr["Created"] = dr1["Created"];
                     dr["EnrollCode"] = account;
                     dr["IsCaptain"] = 0;
-                     DAL.User.InsertMember(dr);
+                    DAL.User.InsertMember(dr);
                 }
 
                 if (dr1["Name3"] != null && dr1["Name3"].ToString() != "")
@@ -217,7 +211,7 @@ namespace LNMCM.Layouts.LNMCM
                     dr["Created"] = dr1["Created"];
                     dr["EnrollCode"] = account;
                     dr["IsCaptain"] = 0;
-                     DAL.User.InsertMember(dr);
+                    DAL.User.InsertMember(dr);
                 }
             }
         }
@@ -234,11 +228,11 @@ namespace LNMCM.Layouts.LNMCM
                 DataTable dtMems = DAL.User.GetMembersByCode(schoolCode).Tables[0];
                 //获取学校下的报名信息，删除和不删除的充号不重复
                 DataTable dt = DAL.User.GetEntrollByCode(schoolCode).Tables[0];
-                string account = dr1["EnrollCode"].ToString ();// GetEntrollID(dt.Copy(), schoolCode);//生成的报名号
+                string account = dr1["EnrollCode"].ToString();// GetEntrollID(dt.Copy(), schoolCode);//生成的报名号
 
                 string ouName = GetOUNameFromWebUrl();//子网站url链接
 
-                bool succeed = SaveAD(account,dr1["Name"].ToString ().Trim(), dr1["Email"].ToString ().Trim(), dr1["Mobile"].ToString().Trim(), dr1["Pwd"].ToString ().Trim(), ouName, true, dr1["OrgName"].ToString ().Trim());
+                bool succeed = SaveAD(account, dr1["Name"].ToString().Trim(), dr1["Email"].ToString().Trim(), dr1["Mobile"].ToString().Trim(), dr1["Pwd"].ToString().Trim(), ouName, true, dr1["OrgName"].ToString().Trim());
                 if (succeed)
                 {
                     DataRow dr = dtMems.NewRow();//成员
@@ -248,16 +242,16 @@ namespace LNMCM.Layouts.LNMCM
                     dr["Number"] = dr1["Number"];
                     dr["Mobile"] = dr1["Mobile"];
                     dr["Flag"] = 1;
-                    dr["Created"] = dr1["Created"] ;
+                    dr["Created"] = dr1["Created"];
                     dr["EnrollCode"] = account;
                     dr["IsCaptain"] = 1;
                     DataRow drEnroll = dt.NewRow();//报名
                     drEnroll["EnrollCode"] = account;
-                    drEnroll["Org"] = account.Substring(0, 5) ;
-                    drEnroll["Email"] = dr1["Email"] ;
+                    drEnroll["Org"] = account.Substring(0, 5);
+                    drEnroll["Email"] = dr1["Email"];
                     drEnroll["Flag"] = 1;
-                    drEnroll["Created"] = dr1["Created"] ;
-                    drEnroll["Pwd"] = dr1["Pwd"] ;
+                    drEnroll["Created"] = dr1["Created"];
+                    drEnroll["Pwd"] = dr1["Pwd"];
                     BLL.Enroll.AddEnroll(drEnroll, dr);
                 }
             }
@@ -307,13 +301,13 @@ namespace LNMCM.Layouts.LNMCM
                     bool flag = SendEmail(account);
                     //if (flag)
                     //    lblMsg.Text = "报名成功！报名信息已经发送邮件，请注意查收！";
-                    string sexString = rblSex.SelectedItem.Text=="男"?"先生":"女士" ;
+                    string sexString = rblSex.SelectedItem.Text == "男" ? "先生" : "女士";
 
                     lbuserName.Text = txtName.Text.Trim() + sexString;
                     lbuseAcc.Text = account;
                     lbuserADAcc.Text = "ccc\\" + account;
                     lbDateNow.Text = DateTime.Now.ToString("f");
-                    lbEmail.Text= txtEmail.Text.Trim();
+                    lbEmail.Text = txtEmail.Text.Trim();
                     divregInfo.Visible = false;
                     divregSuccess.Visible = true;
                 }
@@ -329,6 +323,15 @@ namespace LNMCM.Layouts.LNMCM
                 //Page.ClientScript.RegisterStartupScript(this.GetType(), "message", "<script defer>alert('报名失败！" + ex.ToString() + "')</script>");
             }
         }
+
+        private void ShowPeriod()
+        {
+            string period = Common.getEnrollEmailMsg();
+            lb0.Text = period;
+            lb1.Text = period;
+            lb2.Text = period;
+        }
+
         #endregion
         #region 方法新加
         /// <summary>
@@ -344,10 +347,10 @@ namespace LNMCM.Layouts.LNMCM
             return ouName;
 
         }
-        private bool  CheckMember(DataTable  dt ,string xueHao)
+        private bool CheckMember(DataTable dt, string xueHao)
         {
             DataRow[] drs = dt.Select("Number='" + xueHao + "'");
-            if (drs.Length >0)
+            if (drs.Length > 0)
                 return true;//报名存在
             else
                 return false;
@@ -360,19 +363,19 @@ namespace LNMCM.Layouts.LNMCM
         /// <param name="dt">todo: describe dt parameter on GetEntrollID</param>
         /// <param name="schoolCode">todo: describe schoolCode parameter on GetEntrollID</param>
         /// <returns></returns>
-        private string GetEntrollID( DataTable  dt ,string schoolCode)
+        private string GetEntrollID(DataTable dt, string schoolCode)
         {
 
             int id = 1;
             string enrollID;
 
-            if (dt.Rows.Count >0)
+            if (dt.Rows.Count > 0)
             {
                 enrollID = dt.Rows[0]["EnrollCode"].ToString();
                 id = int.Parse(enrollID.Substring(5));
                 id = id + 1;
             }
-            enrollID = schoolCode + id.ToString().PadLeft(3,'0');
+            enrollID = schoolCode + id.ToString().PadLeft(3, '0');
             return enrollID;
         }
         #endregion
@@ -387,13 +390,13 @@ namespace LNMCM.Layouts.LNMCM
             ddlSchool.DataBind();
 
             DateTime endEnrollDate = DAL.Common.getEnrollEndDate();
-            if (endEnrollDate<DateTime.Now)
+            if (endEnrollDate < DateTime.Now)
             {
                 divregInfo.Visible = false;
                 divregSuccess.Visible = false;
                 lbnoEnroll.Text = "当前已过报名期限！";
                 lbnoEnroll.ForeColor = System.Drawing.Color.Red;
-                lbnoEnroll.Font.Size =15;
+                lbnoEnroll.Font.Size = 15;
             }
             //院系分类
             //foreach (DataRow dr in dsOrgType.Tables[0].Rows  )
@@ -402,7 +405,7 @@ namespace LNMCM.Layouts.LNMCM
             //}
 
             //ddlProvince_SelectedIndexChanged(null, null);
-
+            ShowPeriod();
         }
         //城市改动，显示下面的学校
         void ddlProvince_SelectedIndexChanged(object sender, EventArgs e)
@@ -489,12 +492,12 @@ namespace LNMCM.Layouts.LNMCM
         /// <param name="userEnabled"></param>
         /// <param name="userDept"></param>
         /// <returns></returns>
-        private bool SaveAD(string userAccount, string txtName, string txtEmail, string txtTelephone, string txtPwd, string ouName,  bool userEnabled,string userDept="")
+        private bool SaveAD(string userAccount, string txtName, string txtEmail, string txtTelephone, string txtPwd, string ouName, bool userEnabled, string userDept = "")
         {
             bool retValue = false;
             try
             {
-                SPSecurity.RunWithElevatedPrivileges(delegate()
+                SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
                     string domain = ADHelper.Domain;
                     string strConst = HiddenField1.Value;
@@ -502,7 +505,7 @@ namespace LNMCM.Layouts.LNMCM
                     {
                         //string ouName = strConst.Substring(0, strConst.IndexOf(" "));// "iSmart";// System.Configuration.ConfigurationManager.AppSettings["adPath"];
                         string ouPath = ADHelper.GetDirectoryEntryOfOU("", ouName);
-                        retValue = ADHelper.AddUser(userAccount, txtName, txtEmail, txtTelephone, txtPwd, ouPath ,ouName , userEnabled,userDept  );
+                        retValue = ADHelper.AddUser(userAccount, txtName, txtEmail, txtTelephone, txtPwd, ouPath, ouName, userEnabled, userDept);
                         undoImpersonation();
                     }
                     else
@@ -518,7 +521,7 @@ namespace LNMCM.Layouts.LNMCM
                 return false;
             }
         }
-        public bool  DisableUser(string userAccount,string strConst )
+        public bool DisableUser(string userAccount, string strConst)
         {
             bool retValue = false;
             try
@@ -529,7 +532,7 @@ namespace LNMCM.Layouts.LNMCM
                     //string strConst = HiddenField1.Value;
                     if (impersonateValidUser("administrator", domain, strConst))//.Substring(strConst.IndexOf(" ") + 1)))
                     {
-                        ADHelper.EnabledUser(userAccount, false);;// DeleteAdUser(userAccount)
+                        ADHelper.EnabledUser(userAccount, false); ;// DeleteAdUser(userAccount)
                         undoImpersonation();
                     }
                     else
@@ -553,16 +556,17 @@ namespace LNMCM.Layouts.LNMCM
             {
                 sexString = "先生";
             }
-            string dtNow=DateTime.Now.ToString("f");
-            string cts = "<div style='font-size:14px;background-color:#F8F8F8;font-family:微软雅黑;width:580px;padding:5px;'><p><b>尊敬的" + txtName.Text.Trim() + sexString + "</b></p><p>您好，欢迎报名参加辽宁省研究生数学建模竞赛。</p>";
-            cts+= "<p>您的注册信息如下：</p><p align='center'><i>账号："+entrollID  +" 密码："+txtPwd.Text.Trim() +"</i></p>";
-            cts+= "<div style='border:#999 solid 1px;'>请注意以下事项：<ul><li>登录时输入的账号格式为：ccc\\" + entrollID + "</li><li>请您一定保管好自己的账号和密码，以防丢失。</ul></div><p><p align='right'>辽宁省研究生数学建模竞赛组委会</p><p align='right'>" + dtNow + "</p><hr/><p style='font-size:20px;font-weight:600;text-align:center;'><i>辽宁省第二届研究生数学建模竞赛</i></p></div>";
+            string dtNow = DateTime.Now.ToString("f");
+            string emailMsg = Common.getEnrollEmailMsg();
+            string cts = string.Format("<div style='font-size:14px;background-color:#F8F8F8;font-family:微软雅黑;width:580px;padding:5px;'><p><b>尊敬的{0}{1}</b></p><p>您好，欢迎报名参加{2}辽宁省研究生数学建模竞赛。</p>", txtName.Text.Trim(), sexString, emailMsg);
+            cts += string.Format("<p>您的注册信息如下：</p><p align='center'><i>账号：{0} 密码：{1}</i></p>", entrollID, txtPwd.Text.Trim());
+            cts += string.Format("<div style='border:#999 solid 1px;'>请注意以下事项：<ul><li>登录时输入的账号格式为：ccc\\{0}</li><li>请您一定保管好自己的账号和密码，以防丢失。</ul></div><p><p align='right'>{2}辽宁省研究生数学建模竞赛组委会</p><p align='right'>{1}</p><hr/><p style='font-size:20px;font-weight:600;text-align:center;'><i>{2}辽宁省研究生数学建模竞赛</i></p></div>", entrollID, dtNow, emailMsg);
             string email = WebConfigurationManager.AppSettings["emailFromlnmcm"];
             if (email != "")
             {
                 string[] mails = Common.getEmailFrom(email);//配置文件信息:邮件地址,邮件密码,邮件smtp服务器地址
                 //flag = Common.SendWebMail(mails[0], mails[2], mails[3], txtEmail.Text.Trim(), "智慧东大 - 账户注册成功", content, "1");
-                flag = Common.SendMail(mails[0], mails[1], mails[2], new string[] { txtEmail.Text.Trim() }, "辽宁省研究生数学建模竞赛 - 报名成功", cts, mails[3]);
+                flag = Common.SendMail(mails[0], mails[1], mails[2], new string[] { txtEmail.Text.Trim() }, emailMsg + "辽宁省研究生数学建模竞赛 - 报名成功", cts, mails[3]);
             }
             return flag;
         }

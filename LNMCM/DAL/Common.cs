@@ -1,29 +1,25 @@
 ﻿using System;
-using System.Web;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Data;
+using System.DirectoryServices;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Web.Configuration;
 using System.Web.Mail;
 using System.Web.UI;
-using System.IO;
-using System.DirectoryServices;
-using System.Data;
-using System.Web.Configuration;
 
 namespace LNMCM.DAL
 {
-      public class Common
+    public class Common
     {
         #region 验证
         public static bool IsTelephone(string phoneValue)
         {
             string timeExpr = @"^(((\(\d{3}\)|\d{3}-)?\d{8})|((\(\d{4,5}\)|\d{4,5}-)?\d{7,8})|(\d{11}))$";
-            Regex rex = new Regex(timeExpr );
-            if (rex.IsMatch (phoneValue))
+            Regex rex = new Regex(timeExpr);
+            if (rex.IsMatch(phoneValue))
             {
                 return true;
             }
@@ -33,7 +29,7 @@ namespace LNMCM.DAL
         public static bool IsEmail(string email)
         {
             string emailExpr = @"^([\w-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$";
-            if (Regex.IsMatch (email,emailExpr))
+            if (Regex.IsMatch(email, emailExpr))
                 return true;
             else
                 return false;
@@ -41,13 +37,13 @@ namespace LNMCM.DAL
         //只能输入中文
         public static bool IsChinese(string name)
         {
-            if (name.Length >0)
+            if (name.Length > 0)
             {
-           char[] chars= name.ToCharArray();
-            var ret = true;
-            for (var i = 0; i <chars.Length ; i++)
-                ret = ret && (chars[i]  >= 10000);
-            return ret;
+                char[] chars = name.ToCharArray();
+                var ret = true;
+                for (var i = 0; i < chars.Length; i++)
+                    ret = ret && (chars[i] >= 10000);
+                return ret;
             }
             else
             {
@@ -55,7 +51,7 @@ namespace LNMCM.DAL
             }
         }
         //测试工号或学号
-        public static  bool IsMatching(string accString)
+        public static bool IsMatching(string accString)
         {
             bool ismatch = true;
             ismatch = Common.isNumberic(accString);
@@ -109,7 +105,7 @@ namespace LNMCM.DAL
             return dept;
         }
         //用户在ad中是否存在
-        public static  bool UserExits( string account)
+        public static bool UserExits(string account)
         {
             DirectoryEntry adUser = ADHelper.GetDirectoryEntryByAccount(account);
 
@@ -163,7 +159,7 @@ namespace LNMCM.DAL
             }
         }
         //ad中的用户和数据库同步
-        public static bool  AddUserFromAD(string account)
+        public static bool AddUserFromAD(string account)
         {
             DataSet ds = DAL.User.GetUserByAccount(account);
             if (ds.Tables[0].Rows.Count > 0)//在数据库中找到了当前用户的记录,准备更新操作
@@ -179,7 +175,7 @@ namespace LNMCM.DAL
                 dr["Account"] = account;
                 dr["Created"] = DateTime.Now;
                 FillUserInfo(ref dr, account);
-                DAL.User.InsertEntroll (dr);//添加新用户纪录
+                DAL.User.InsertEntroll(dr);//添加新用户纪录
             }
 
             return true;
@@ -193,17 +189,23 @@ namespace LNMCM.DAL
             page.ClientScript.RegisterStartupScript(type, "message", "<script defer>alert('" + message + "')</script>");
             return true;
         }
-        public static string[] getEmailFrom(string emailFrom){
-            emailFrom = emailFrom.Replace(" ","");
+        public static string[] getEmailFrom(string emailFrom)
+        {
+            emailFrom = emailFrom.Replace(" ", "");
             string[] mails = emailFrom.Trim().Split(',');
             return mails;
         }
 
         public static DateTime getEnrollEndDate()
         {
-            string endDateStr=WebConfigurationManager.AppSettings["lnmcmEnrollEnd"];
+            string endDateStr = WebConfigurationManager.AppSettings["lnmcmEnrollEnd"];
             DateTime endDate = DateTime.Parse(endDateStr);
             return endDate;
+        }
+        public static string getEnrollEmailMsg()
+        {
+            string emailMsg = WebConfigurationManager.AppSettings["lnmcmEnrollEmailMsg"];
+            return emailMsg;
         }
         /// <summary>
         /// 弹出JavaScript小窗口
@@ -355,7 +357,7 @@ namespace LNMCM.DAL
         /// <param name="toSubject">发送的主题</param>
         /// <param name="toBody">发送的内容</param>
         /// <returns></returns>
-        public static bool SendMail(string fromEmail, string fromDisplayName, string pwd, string[] toMail, string toSubject, string toBody,string smtp="")
+        public static bool SendMail(string fromEmail, string fromDisplayName, string pwd, string[] toMail, string toSubject, string toBody, string smtp = "")
         {
             ////设置发件人信箱,及显示名字
             MailAddress from = new MailAddress(fromEmail, fromDisplayName);
@@ -414,7 +416,7 @@ namespace LNMCM.DAL
         /// <param name="body">邮件正文</param>
         /// <param name="sendMode">邮件格式:0是纯文本,1是html格式化文本</param>
         /// <returns></returns>
-        public static bool SendWebMail(string fromMail,string fromPwd, string smtpStr, string toMail,  string subject, string body, string sendMode)
+        public static bool SendWebMail(string fromMail, string fromPwd, string smtpStr, string toMail, string subject, string body, string sendMode)
         {
             try
             {
@@ -440,7 +442,7 @@ namespace LNMCM.DAL
                 myMail.Fields.Add("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate", 1);
                 myMail.Fields.Add("http://schemas.microsoft.com/cdo/configuration/sendusername", fromMail); //发送方邮件帐户
                 myMail.Fields.Add("http://schemas.microsoft.com/cdo/configuration/sendpassword", fromPwd); //发送方邮件密码
-                SmtpMail.SmtpServer = smtpStr ;//"smtp." + fromMail.Substring(fromMail.IndexOf("@") + 1);
+                SmtpMail.SmtpServer = smtpStr;//"smtp." + fromMail.Substring(fromMail.IndexOf("@") + 1);
                 SmtpMail.Send(myMail);
                 return true;
             }
